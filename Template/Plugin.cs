@@ -1,17 +1,15 @@
 ﻿using BepInEx;
 using System.Security.Permissions;
 using System.Security;
-using UnityEngine;
-using Fisobs.Core;
 
 #pragma warning disable CS0618
 [module: UnverifiableCode]
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
 #pragma warning restore CS0618
 
-namespace Template
+namespace ScavIntel
 {
-    [BepInPlugin("nacu.template", "Template", "0.1")]
+    [BepInPlugin("nacu.scavintel", "Scav Intel", "1.0")]
     public class Plugin : BaseUnityPlugin
     {
         public static bool AppliedAlreadyDontDoItAgainPlease;
@@ -37,6 +35,7 @@ namespace Template
                 AppliedAlreadyDontDoItAgainPlease = true;
 
                 //Futile.atlasManager.LoadAtlas("Atlases/template");
+                Hooks.Apply();
             }
         }
     }
