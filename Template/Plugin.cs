@@ -34,7 +34,6 @@ namespace ScavIntel
             {
                 AppliedAlreadyDontDoItAgainPlease = true;
 
-                //Futile.atlasManager.LoadAtlas("Atlases/template");
                 Hooks.Apply();
             }
         }

@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using MoreSlugcats;
 using System.Collections.Generic;
+using System;
 
 namespace ScavIntel
 {
@@ -12,13 +13,14 @@ namespace ScavIntel
         public float squadCooldown;
         public int squadScavsCount;
         public bool cycleStartInit;
+        public Action StatsUpdated;
 
-        public int Normal1A => killedScavs[0];
-        public int Elite1A => killedScavs[1];
-        public int Normal2A => killedScavs[0] + availableScavs[0];
-        public int Elite2A => killedScavs[1] + availableScavs[1];
-        public int Normal3A => allScavs[0];
-        public int Elite3A => allScavs[1];
+        //public int Normal1A => killedScavs[0];
+        //public int Elite1A => killedScavs[1];
+        //public int Normal2A => killedScavs[0] + availableScavs[0];
+        //public int Elite2A => killedScavs[1] + availableScavs[1];
+        //public int Normal3A => allScavs[0];
+        //public int Elite3A => allScavs[1];
 
         public ScavInfo()
         {
@@ -38,11 +40,13 @@ namespace ScavIntel
                 cycleStartInit = false;
             }
         }
-
+            
         public void AddKill(bool elite)
         {
             if (elite) killedScavs[1]++;
             else killedScavs[0]++;
+
+            //StatsUpdated?.Invoke();
 
             Plugin.logger.LogMessage($"Player killed a{(elite ? "n elite" : "")} scavenger!! Current kills: {(killedScavs[elite ? 1 : 0])}(1a)");
         }
@@ -58,14 +62,14 @@ namespace ScavIntel
             foreach (var scav in world.scavengersWorldAI.scavengers)
             {
                 bool nightCheck = scav.parent.nightCreature && world.rainCycle.dayNightCounter < 600;
-                bool nightCheck2 = world.rainCycle.TimeUntilRain < 800 && !scav.parent.nightCreature && !scav.parent.ignoreCycle;
-                bool inDenCheck = scav.destination == scav.denPosition && scav.parent.pos.room == world.offScreenDen.index;
+                bool inDenCheck = scav.destination == scav.denPosition && scav.parent.pos.room == world.offScreenDen.index && !cycleStartInit;
+                bool precycleCheck = ModManager.MSC && scav.parent.preCycle && world.rainCycle.maxPreTimer <= 0;
                 Plugin.logger.LogMessage($"Scavenger {scav.parent}. Dead - {scav.parent.state.dead}. Den - {(scav.parent.InDen || scav.parent.pos.room == world.offScreenDen.index) && scav.parent.WantToStayInDenUntilEndOfCycle()}. Night check 1 - {nightCheck}. InDenCheck - {inDenCheck}.");
-                if (scav.parent.state.dead || ((scav.parent.InDen || scav.parent.pos.room == world.offScreenDen.index) && scav.parent.WantToStayInDenUntilEndOfCycle()) || nightCheck || inDenCheck) continue; //|| nightCheck2
+                if (scav.parent.state.dead || precycleCheck || ((scav.parent.InDen || scav.parent.pos.room == world.offScreenDen.index) && scav.parent.WantToStayInDenUntilEndOfCycle()) || nightCheck || inDenCheck) continue; //|| nightCheck2
                 if (scav.parent.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite)
                 {
                     eliteCount++;
-                } 
+                }
                 else
                 {
                     scavCount++;
@@ -75,6 +79,7 @@ namespace ScavIntel
 
             availableScavs[0] = scavCount;
             availableScavs[1] = eliteCount;
+            StatsUpdated?.Invoke();
 
             Plugin.logger.LogMessage($"New available scav counts: {availableScavs[0]} - {availableScavs[1]}. 2a: {availableScavs[0] + killedScavs[0]} - {availableScavs[1] + killedScavs[1]}");
         }
@@ -89,9 +94,10 @@ namespace ScavIntel
 
             foreach (var scav in world.scavengersWorldAI.scavengers)
             {
-                bool inDenCheck = scav.destination == scav.denPosition && scav.parent.pos.room == world.offScreenDen.index;
-                Plugin.logger.LogMessage($"Scavenger {scav.parent}. Dead - {scav.parent.state.dead}. Den - {(scav.parent.InDen || scav.parent.pos.room == world.offScreenDen.index) && scav.parent.WantToStayInDenUntilEndOfCycle()}. InDenCheck - {inDenCheck}.");
-                if (scav.parent.state.dead || ((scav.parent.InDen || scav.parent.pos.room == world.offScreenDen.index) && scav.parent.WantToStayInDenUntilEndOfCycle()) || inDenCheck) continue;
+                //bool inDenCheck = scav.destination == scav.denPosition && scav.parent.pos.room == world.offScreenDen.index && cycleStartInit;
+                Plugin.logger.LogMessage($"Scavenger {scav.parent}. Dead - {scav.parent.state.dead}.");
+                bool precycleCheck = ModManager.MSC && scav.parent.preCycle && world.rainCycle.maxPreTimer <= 0;
+                if (scav.parent.state.dead || precycleCheck) continue;// || ((scav.parent.InDen || scav.parent.pos.room == world.offScreenDen.index) && scav.parent.WantToStayInDenUntilEndOfCycle()) || inDenCheck) continue;
                 if (scav.parent.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite)
                 {
                     eliteCount++;
@@ -104,6 +110,8 @@ namespace ScavIntel
 
             allScavs[0] = scavCount;
             allScavs[1] = eliteCount;
+            StatsUpdated?.Invoke();
+
             Plugin.logger.LogMessage($"New global scav count 3a: {allScavs[0]} - {allScavs[1]}");
         }
 
