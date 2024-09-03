@@ -18,11 +18,29 @@ namespace ScavIntel
             On.OverWorld.WorldLoaded += OverWorld_WorldLoaded;
             On.OverWorld.LoadWorld += OverWorld_LoadWorld;
             On.SaveState.SessionEnded += SaveState_SessionEnded;
-            On.ShelterDoor.Update += ShelterDoor_Update;
+            //On.ShelterDoor.Update += ShelterDoor_Update;
             On.AbstractRoom.MoveEntityToDen += AbstractRoom_MoveEntityToDen;
             On.AbstractRoom.MoveEntityOutOfDen += AbstractRoom_MoveEntityOutOfDen;
             On.ProcessManager.PreSwitchMainProcess += ProcessManager_PreSwitchMainProcess;
             On.HUD.HUD.InitSinglePlayerHud += HUD_InitSinglePlayerHud;
+            On.RoomCamera.FireUpSinglePlayerHUD += RoomCamera_FireUpSinglePlayerHUD;
+        }
+
+        private static void RoomCamera_FireUpSinglePlayerHUD(On.RoomCamera.orig_FireUpSinglePlayerHUD orig, RoomCamera self, Player player)
+        {
+            orig.Invoke(self, player);
+
+            foreach (var g in self.room.game.cameras[0].hud.parts)
+            {
+                if (g is IntelHUD hud)
+                {
+                    if (hud.simulatedMapPress == 0)
+                    {
+                        hud.simulatedMapPress = 200;
+                    }
+                    break;
+                }
+            }
         }
 
         private static void ProcessManager_PreSwitchMainProcess(On.ProcessManager.orig_PreSwitchMainProcess orig, ProcessManager self, ProcessManager.ProcessID ID)
@@ -42,7 +60,7 @@ namespace ScavIntel
             if (!GlobalInfo.cycleStartInit)
             {
                 GlobalInfo.UpdateGlobalScavCount(self.activeWorld);
-                GlobalInfo.UpdateAvailableScavs(self.activeWorld);
+                GlobalInfo.UpdateAvailableScavs(self.activeWorld, false);
                 GlobalInfo.cycleStartInit = true;
             }
         }
@@ -60,7 +78,7 @@ namespace ScavIntel
             if (ent is AbstractCreature crit && (crit.creatureTemplate.type == CreatureTemplate.Type.Scavenger || crit.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite))
             {
                 Plugin.logger.LogWarning("OUT OF DEN");
-                GlobalInfo.UpdateAvailableScavs(self.world);
+                GlobalInfo.UpdateAvailableScavs(self.world, false);
             }
         }
 
@@ -71,7 +89,7 @@ namespace ScavIntel
             if (ent is AbstractCreature crit && (crit.creatureTemplate.type == CreatureTemplate.Type.Scavenger || crit.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite))
             {
                 Plugin.logger.LogWarning("INTO DEN");
-                GlobalInfo.UpdateAvailableScavs(self.world);
+                GlobalInfo.UpdateAvailableScavs(self.world, false);
             }
         }
 
@@ -79,7 +97,7 @@ namespace ScavIntel
         {
             orig.Invoke(self, eu);
 
-            if (self.closedFac < 0.04f)
+            if (self.closedFac < 0.04f && self.IsOpening)
             {
                //GlobalInfo.UpdateGlobalScavCount(self.room.world);
                //GlobalInfo.UpdateAvailableScavs(self.room.world);
@@ -89,7 +107,10 @@ namespace ScavIntel
                 {
                     if (g is IntelHUD hud)
                     {
-                        hud.simulatedMapPress = 200;
+                        if (hud.simulatedMapPress == 0)
+                        {
+                            hud.simulatedMapPress = 200;
+                        }
                         break;
                     }
                 }
@@ -108,7 +129,17 @@ namespace ScavIntel
             orig.Invoke(self);
 
             GlobalInfo.UpdateGlobalScavCount(self.activeWorld);
-            GlobalInfo.UpdateAvailableScavs(self.activeWorld);
+            GlobalInfo.UpdateAvailableScavs(self.activeWorld, false);
+
+            if (self.game.cameras == null || self.game.cameras[0].hud == null) return;
+            foreach (var g in self.game.cameras[0].hud.parts)
+            {
+                if (g is IntelHUD hud)
+                {
+                    hud.simulatedMapPress = 200;
+                    break;
+                }
+            }
         }
 
         private static void ScavengersWorldAI_Update(On.ScavengersWorldAI.orig_Update orig, ScavengersWorldAI self)
@@ -118,15 +149,17 @@ namespace ScavIntel
             orig.Invoke(self);
             if (previousScavCount != self.scavengers.Count)
             {
-                GlobalInfo.UpdateAvailableScavs(self.world);
+                GlobalInfo.UpdateAvailableScavs(self.world, false);
                 GlobalInfo.UpdateSquadCount(self);
             }
+
             if (previousSquadCount != self.playerAssignedSquads.Count)
             {
                 Plugin.logger.LogWarning("Current amount of player assigned squads: " + self.playerAssignedSquads.Count);
                 GlobalInfo.UpdateSquadCount(self);
             }
-            GlobalInfo.CooldownToSeconds(self.playerSquadCooldown);
+
+            GlobalInfo.CooldownToSeconds(self.playerSquadCooldown, self.world);
         }
 
         //private static void ScavengersWorldAI_AddScavenger(On.ScavengersWorldAI.orig_AddScavenger orig, ScavengersWorldAI self, ScavengerAbstractAI newScav)
@@ -147,7 +180,7 @@ namespace ScavIntel
             {
                 GlobalInfo.AddKill(victim.Template.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite);
                 victim.room.world.scavengersWorldAI.scavengers.Remove(victim.abstractCreature.abstractAI as ScavengerAbstractAI);
-                GlobalInfo.UpdateAvailableScavs(victim.room.world);
+                GlobalInfo.UpdateAvailableScavs(victim.room.world, true);
                 if (victim.room.world.scavengersWorldAI != null && ((victim as Scavenger).abstractCreature.abstractAI as ScavengerAbstractAI).squad != null)
                 {
                     GlobalInfo.UpdateSquadCount(victim.room.world.scavengersWorldAI);

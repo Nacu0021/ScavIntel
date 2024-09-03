@@ -10,17 +10,10 @@ namespace ScavIntel
         public int[] killedScavs;
         public int[] availableScavs;
         public int[] allScavs;
-        public float squadCooldown;
+        public int squadCooldown;
         public int squadScavsCount;
         public bool cycleStartInit;
         public Action StatsUpdated;
-
-        //public int Normal1A => killedScavs[0];
-        //public int Elite1A => killedScavs[1];
-        //public int Normal2A => killedScavs[0] + availableScavs[0];
-        //public int Elite2A => killedScavs[1] + availableScavs[1];
-        //public int Normal3A => allScavs[0];
-        //public int Elite3A => allScavs[1];
 
         public ScavInfo()
         {
@@ -51,10 +44,13 @@ namespace ScavIntel
             Plugin.logger.LogMessage($"Player killed a{(elite ? "n elite" : "")} scavenger!! Current kills: {(killedScavs[elite ? 1 : 0])}(1a)");
         }
 
-        public void UpdateAvailableScavs(World world)
+        public void UpdateAvailableScavs(World world, bool fromKill)
         {
             Plugin.logger.LogMessage($"UPDATING AVAILABLE SCAVS");
             if (world.scavengersWorldAI == null) return;
+
+            int lastScavCount = availableScavs[0];
+            int lastEliteCount = availableScavs[1];
 
             int scavCount = 0;
             int eliteCount = 0;
@@ -64,7 +60,7 @@ namespace ScavIntel
                 bool nightCheck = scav.parent.nightCreature && world.rainCycle.dayNightCounter < 600;
                 bool inDenCheck = scav.destination == scav.denPosition && scav.parent.pos.room == world.offScreenDen.index && !cycleStartInit;
                 bool precycleCheck = ModManager.MSC && scav.parent.preCycle && world.rainCycle.maxPreTimer <= 0;
-                Plugin.logger.LogMessage($"Scavenger {scav.parent}. Dead - {scav.parent.state.dead}. Den - {(scav.parent.InDen || scav.parent.pos.room == world.offScreenDen.index) && scav.parent.WantToStayInDenUntilEndOfCycle()}. Night check 1 - {nightCheck}. InDenCheck - {inDenCheck}.");
+                //Plugin.logger.LogMessage($"Scavenger {scav.parent}. Dead - {scav.parent.state.dead}. Den - {(scav.parent.InDen || scav.parent.pos.room == world.offScreenDen.index) && scav.parent.WantToStayInDenUntilEndOfCycle()}. Night check 1 - {nightCheck}. InDenCheck - {inDenCheck}.");
                 if (scav.parent.state.dead || precycleCheck || ((scav.parent.InDen || scav.parent.pos.room == world.offScreenDen.index) && scav.parent.WantToStayInDenUntilEndOfCycle()) || nightCheck || inDenCheck) continue; //|| nightCheck2
                 if (scav.parent.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite)
                 {
@@ -82,6 +78,25 @@ namespace ScavIntel
             StatsUpdated?.Invoke();
 
             Plugin.logger.LogMessage($"New available scav counts: {availableScavs[0]} - {availableScavs[1]}. 2a: {availableScavs[0] + killedScavs[0]} - {availableScavs[1] + killedScavs[1]}");
+
+            if (!cycleStartInit || world.game.cameras == null || world.game.cameras[0].hud == null) return;
+            foreach (var g in world.game.cameras[0].hud.parts)
+            {
+                if (g is IntelHUD hud)
+                {
+                    if (scavCount != lastScavCount)
+                    {
+                        hud.showScavengerData = 70;
+                        hud.scavengerDataOnLast = true;
+                        hud.scavengerDataFromKill = fromKill;
+                    }
+                    if (eliteCount != lastEliteCount)
+                    {
+                        hud.showEliteData = 70;
+                    }
+                    break;
+                }
+            }
         }
 
         public void UpdateGlobalScavCount(World world)
@@ -89,13 +104,16 @@ namespace ScavIntel
             Plugin.logger.LogMessage($"UPDATING GLOBAL SCAV COUNT");
             if (world.scavengersWorldAI == null) return;
 
+            int lastScavCount = allScavs[0];
+            int lastEliteCount = allScavs[1];
+
             int scavCount = allScavs[0];
             int eliteCount = allScavs[1];
 
             foreach (var scav in world.scavengersWorldAI.scavengers)
             {
                 //bool inDenCheck = scav.destination == scav.denPosition && scav.parent.pos.room == world.offScreenDen.index && cycleStartInit;
-                Plugin.logger.LogMessage($"Scavenger {scav.parent}. Dead - {scav.parent.state.dead}.");
+                //Plugin.logger.LogMessage($"Scavenger {scav.parent}. Dead - {scav.parent.state.dead}.");
                 bool precycleCheck = ModManager.MSC && scav.parent.preCycle && world.rainCycle.maxPreTimer <= 0;
                 if (scav.parent.state.dead || precycleCheck) continue;// || ((scav.parent.InDen || scav.parent.pos.room == world.offScreenDen.index) && scav.parent.WantToStayInDenUntilEndOfCycle()) || inDenCheck) continue;
                 if (scav.parent.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite)
@@ -113,10 +131,28 @@ namespace ScavIntel
             StatsUpdated?.Invoke();
 
             Plugin.logger.LogMessage($"New global scav count 3a: {allScavs[0]} - {allScavs[1]}");
+
+            //if (world.game.cameras == null || world.game.cameras[0].hud == null) return;
+            //foreach (var g in world.game.cameras[0].hud.parts)
+            //{
+            //    if (g is IntelHUD hud)
+            //    {
+            //        if (scavCount != lastScavCount)
+            //        {
+            //            hud.showScavengerData = 50;
+            //        }
+            //        if (eliteCount != lastEliteCount)
+            //        {
+            //            hud.showEliteData = 50;
+            //        }
+            //        break;    
+            //    }
+            //}
         }
 
         public void UpdateSquadCount(ScavengersWorldAI scavsAI)
         {
+            int lastCount = squadScavsCount;
             int count = 0;
 
             foreach (var squad in scavsAI.playerAssignedSquads)
@@ -128,11 +164,42 @@ namespace ScavIntel
             }
 
             squadScavsCount = count;
+
+            if (scavsAI.world.game.cameras == null || scavsAI.world.game.cameras[0].hud == null) return;
+            foreach (var g in scavsAI.world.game.cameras[0].hud.parts)
+            {
+                if (g is IntelHUD hud)
+                {
+                    if (lastCount != squadScavsCount)
+                    {
+                        hud.showSquadCount = 100;
+                    }
+                    break;
+                }
+            }
         }
 
-        public void CooldownToSeconds(int v)
+        public void CooldownToSeconds(int v, World world)
         {
+            int lastCooldown = squadCooldown;
             squadCooldown = Mathf.FloorToInt((float)v / 40f);
+
+            if (world.game.cameras == null || world.game.cameras[0].hud == null) return;
+            foreach (var g in world.game.cameras[0].hud.parts)
+            {
+                if (g is IntelHUD hud)
+                {
+                    if (squadCooldown > 0 && squadCooldown < 6)
+                    {
+                        hud.showCooldown = 100;
+                    }
+                    if (squadCooldown == 0 && lastCooldown > squadCooldown)
+                    {
+                        hud.showSquadCount = 100;
+                    }
+                    break;
+                }
+            }
         }
     }
 }
