@@ -1,67 +1,85 @@
 ﻿using UnityEngine;
 using RWCustom;
-using Mono.Cecil.Cil;
-using Mono.Cecil;
-using MonoMod.Cil;
-using MonoMod.RuntimeDetour;
-using System.Collections.Generic;
 using HUD;
+using MoreSlugcats;
 
 namespace ScavIntel
 {
     public class IntelHUD : HudPart
     {
-        public FLabel scavengerData;
-        public FLabel eliteData;
-        public FLabel squadCooldown;
-        public FLabel squadCount;
-
         public Vector2 pos;
         public Vector2 lastPos;
 
-        // I love UI coding (CHANGE TO ARRAYS LATER)
         public float mapFade;
-        public float cooldownFade;
-        public float squadCountFade;
-        public float scavengerDataFade;
-        public float eliteDataFade;
 
         public int simulatedMapPress;
         public int cycleStartCounter;
-        public int showCooldown;
-        public int showSquadCount;
-        public int showScavengerData;
-        public int showEliteData;
 
-        public int scavengerDataAnimation;
-        public bool scavengerDataOnLast;
-        public bool scavengerDataFromKill;
+        public FLabel[] data;
+        public FLabel[] dataShadows;
+        public float[] dataFades;
+        public int[] dataShows;
+        public int[] dataAnimations;
+        public bool[] dataOnLast;
 
-        public const int animationStart = 30;
-        public const int animationLength = 6;
+        public const int animationStart = 36;
+        public const int animationLength = 8;
         public const float fadeSpeed = 0.2f;
+
+        //public FSprite[] scavPointer;
+        public FSprite[] scavPointerLines;
+        public Vector2 shouldPointAt;
+        public Vector2 pointAt;
+        public Vector2 lastPointAt;
+        public float pointerFade;
+        public bool showPointer;
+        public float pointerRotation;
+        public float lastPointerRotation;
+        public float pointerRotationAdd;
+        public float pointer3DWidth = 2f;
+        public float pointerWidth = 6f;
 
         public IntelHUD(HUD.HUD hud) : base(hud)
         {
             pos = new Vector2(20.2f, 725.2f);
             lastPos = pos;
 
-            scavengerData = new FLabel(Custom.GetDisplayFont(), "") { alignment = FLabelAlignment.Left, color = new Color(0.8f, 0.8f, 0.8f) };
-            eliteData = new FLabel(Custom.GetDisplayFont(), "") { alignment = FLabelAlignment.Left, color = new Color(0.8f, 0.8f, 0.8f) };
-            squadCooldown = new FLabel(Custom.GetDisplayFont(), "") { alignment = FLabelAlignment.Left, color = new Color(0.8f, 0.8f, 0.8f) };
-            squadCount = new FLabel(Custom.GetDisplayFont(), "") { alignment = FLabelAlignment.Left, color = new Color(0.8f, 0.8f, 0.8f) };
+            data = new FLabel[4];
+            dataShadows = new FLabel[4];
+            dataFades = new float[4];
+            dataShows = new int[4];
+            dataAnimations = new int[4];
+            dataOnLast = new bool[4];
 
-            hud.fContainers[1].AddChild(scavengerData);
-            hud.fContainers[1].AddChild(eliteData);
-            hud.fContainers[1].AddChild(squadCooldown);
-            hud.fContainers[1].AddChild(squadCount);
+            for (int i = 0; i < 4; i++)
+            {
+                data[i] = new FLabel(Custom.GetDisplayFont(), "") { alignment = FLabelAlignment.Left };
+                dataShadows[i] = new FLabel(Custom.GetDisplayFont(), "") { alignment = FLabelAlignment.Left, color = new Color(0.01f, 0.01f, 0.01f) };
+                hud.fContainers[1].AddChild(dataShadows[i]);
+                hud.fContainers[1].AddChild(data[i]);
+            }
 
             UpdateInfo();
+
+            //scavPointer = new FSprite[2];
+            //for (int i = 0; i < 2; i++)
+            //{
+            //    scavPointer[i] = new FSprite("keyArrowA") { shader = Custom.rainWorld.Shaders["Hologram"], color = RainWorld.SaturatedGold };
+            //    hud.fContainers[1].AddChild(scavPointer[i]);
+            //}
+            scavPointerLines = new FSprite[9];
+            for (int i = 0; i < 9; i++)
+            {
+                scavPointerLines[i] = new FSprite("pixel") { shader = Custom.rainWorld.Shaders["Hologram"], color = RainWorld.SaturatedGold };
+                hud.fContainers[1].AddChild(scavPointerLines[i]);
+            }
+
+            pointerRotationAdd = 0.025f;
         }
 
         public void UpdateInfo()
         {
-            scavengerData.text = string.Concat(
+            data[0].text = string.Concat(
                 "Scavenger Counts (kills/kills max/total): ",
                 Hooks.GlobalInfo.killedScavs[0],
                 "/",
@@ -70,7 +88,7 @@ namespace ScavIntel
                 Hooks.GlobalInfo.allScavs[0]
                 );
 
-            eliteData.text = string.Concat(
+            data[1].text = string.Concat(
                 "Elite Scavenger Counts (kills/kills max/total): ",
                 Hooks.GlobalInfo.killedScavs[1],
                 "/",
@@ -78,12 +96,13 @@ namespace ScavIntel
                 "/",
                 Hooks.GlobalInfo.allScavs[1]
                 );
+            data[3].text = "Squad count: " + Hooks.GlobalInfo.squadScavsCount.ToString();
         }
 
         public override void Update()
         {
-            squadCooldown.text = "Squad cooldown: " + Hooks.GlobalInfo.squadCooldown.ToString() + "s";
-            squadCount.text = "Squad count: " + Hooks.GlobalInfo.squadScavsCount.ToString();
+            #region ScavengerData
+            data[2].text = "Squad cooldown: " + Hooks.GlobalInfo.squadCooldown.ToString() + "s";
 
             if (cycleStartCounter > 0)
             {
@@ -95,10 +114,11 @@ namespace ScavIntel
             }
 
             simulatedMapPress = Mathf.Max(0, simulatedMapPress - 1);
-            showScavengerData = Mathf.Max(0, showScavengerData - 1);
-            showEliteData = Mathf.Max(0, showEliteData - 1);
-            showCooldown = Mathf.Max(0, showCooldown - 1);
-            showSquadCount = Mathf.Max(0, showSquadCount - 1);
+
+            for (int i = 0; i < 4; i++)
+            {
+                dataShows[i] = Mathf.Max(0, dataShows[i] - 1);
+            }
 
             if (hud.owner.MapInput.mp || simulatedMapPress > 0)
             {
@@ -106,72 +126,169 @@ namespace ScavIntel
             }
             else mapFade = Mathf.Max(0f, mapFade - fadeSpeed);
 
-            if (showScavengerData > 0)
+            for (int i = 0; i < 4; i++)
             {
-                scavengerDataFade = Mathf.Min(1f, scavengerDataFade + fadeSpeed);
-                if (scavengerDataFade == 1f)
+                if (dataShows[i] > 0)
                 {
-                    scavengerDataAnimation = Mathf.Min(animationStart + animationLength, scavengerDataAnimation + 1);
-                
-                    float colorOverrideX = Mathf.InverseLerp(animationStart, animationStart + animationLength, scavengerDataAnimation);
-                    float colorOverrideFac = -Mathf.Abs(Mathf.Pow(colorOverrideX * 2f - 1f, 2f)) + 1f;
-                    scavengerData.color = Color.Lerp(new Color(0.8f, 0.8f, 0.8f), Color.Lerp(Color.white, Color.red, 0.5f), colorOverrideFac);
-                
-                    if (scavengerDataAnimation > animationStart && scavengerDataOnLast)
+                    dataFades[i] = Mathf.Min(1f, dataFades[i] + fadeSpeed);
+                    if (dataFades[i] == 1f && i != 2 && dataOnLast[i])
                     {
-                        scavengerData.text = string.Concat(
-                            "Scavenger Counts (kills/kills max/total): ",
-                            Hooks.GlobalInfo.killedScavs[0],
-                            "/",
-                            Hooks.GlobalInfo.killedScavs[0] + Hooks.GlobalInfo.availableScavs[0],
-                            "/",
-                            Hooks.GlobalInfo.allScavs[0]
-                            );
-                
-                        // Play sound
-                
-                        scavengerDataOnLast = false;
+                        dataAnimations[i] = Mathf.Min(animationStart + animationLength, dataAnimations[i] + 1);
+
+                        float colorOverrideX = Mathf.InverseLerp(animationStart, animationStart + animationLength, dataAnimations[i]);
+                        float colorOverrideFac = -Mathf.Abs(Mathf.Pow(colorOverrideX * 2f - 1f, 2f)) + 1f;
+                        data[i].color = Color.Lerp(Color.white, RainWorld.SaturatedGold, colorOverrideFac * 0.75f);
+
+                        if (dataAnimations[i] > animationStart)
+                        {
+                            switch (i)
+                            {
+                                case 0:
+                                    data[i].text = string.Concat(
+                                        "Scavenger Counts (kills/kills max/total): ",
+                                        Hooks.GlobalInfo.killedScavs[0],
+                                        "/",
+                                        Hooks.GlobalInfo.killedScavs[0] + Hooks.GlobalInfo.availableScavs[0],
+                                        "/",
+                                        Hooks.GlobalInfo.allScavs[0]
+                                        );
+                                    break;
+                                case 1:
+                                    data[i].text = string.Concat(
+                                        "Elite Scavenger Counts (kills/kills max/total): ",
+                                        Hooks.GlobalInfo.killedScavs[1],
+                                        "/",
+                                        Hooks.GlobalInfo.killedScavs[1] + Hooks.GlobalInfo.availableScavs[1],
+                                        "/",
+                                        Hooks.GlobalInfo.allScavs[1]
+                                        );
+                                    break;
+                                case 3:
+                                    data[i].text = "Squad count: " + Hooks.GlobalInfo.squadScavsCount.ToString();
+                                    break;
+                            }
+                        }
+
+                        if (dataAnimations[i] > animationLength + animationStart) dataOnLast[i] = false;
                     }
                 }
+                else
+                {
+                    dataFades[i] = Mathf.Max(0f, dataFades[i] - fadeSpeed);
+                    dataAnimations[i] = 0;
+                }
+                dataShadows[i].text = data[i].text;
             }
-            else
-            {
-                scavengerDataFade = Mathf.Max(0f, scavengerDataFade - fadeSpeed);
-                scavengerDataAnimation = 0;
-            }
+            #endregion
 
-            if (showEliteData > 0)
+            #region ScavengerPointer
+            showPointer = false;
+            if (hud.owner is Player player && player.room != null && !player.dead)
             {
-                eliteDataFade = Mathf.Min(1f, eliteDataFade + fadeSpeed);
+                AbstractCreature pointCreature = null;
+                foreach (var crit in player.room.abstractRoom.creatures)
+                {
+                    if (!crit.state.dead && 
+                        (crit.creatureTemplate.type == CreatureTemplate.Type.Scavenger || crit.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite) &&
+                        crit.realizedCreature != null)
+                    {
+                        if (pointCreature == null || Custom.ManhattanDistance(player.abstractCreature.pos, crit.pos) < Custom.ManhattanDistance(player.abstractCreature.pos, pointCreature.pos))
+                        {
+                            pointCreature = crit;
+                        }
+                    }
+                }
+                if (pointCreature != null)
+                {
+                    shouldPointAt = Custom.DirVec(player.mainBodyChunk.pos, pointCreature.realizedCreature.mainBodyChunk.pos);
+                }
+                showPointer = pointCreature != null && !player.inShortcut;
             }
-            else eliteDataFade = Mathf.Max(0f, eliteDataFade - fadeSpeed);
+            lastPointAt = pointAt;
+            pointAt = Vector3.Slerp(pointAt, shouldPointAt, 0.3f);
 
-            if (showCooldown > 0)
+            if (showPointer)
             {
-                cooldownFade = Mathf.Min(1f, cooldownFade + fadeSpeed);
+                pointerFade = Mathf.Min(1f, pointerFade + fadeSpeed * 0.1f);
             }
-            else cooldownFade = Mathf.Max(0f, cooldownFade - fadeSpeed);
+            else pointerFade = Mathf.Max(0f, pointerFade - fadeSpeed * 0.1f);
 
-            if (showSquadCount > 0)
+            lastPointerRotation = pointerRotation;
+            pointerRotation += pointerRotationAdd + Mathf.Lerp(-0.005f, 0.005f, UnityEngine.Random.value);
+            if (pointerRotation > 1f)
             {
-                squadCountFade = Mathf.Min(1f, squadCountFade + fadeSpeed);
+                pointerRotation -= 1f;
+                lastPointerRotation -= 1f;
             }
-            else squadCountFade = Mathf.Max(0f, squadCountFade - fadeSpeed);
+            #endregion
         }
 
         public override void Draw(float timeStacker)
         {
             Vector2 drawPos = DrawPos(timeStacker);
 
-            scavengerData.SetPosition(drawPos - new Vector2(0f, 0f));
-            eliteData.SetPosition(drawPos - new Vector2(0f, 30f));
-            squadCooldown.SetPosition(drawPos - new Vector2(0f, 60f));
-            squadCount.SetPosition(drawPos - new Vector2(0f, 90f));
+            for (int i = 0; i < 4; i++)
+            {
+                data[i].SetPosition(drawPos + new Vector2(0f, 0f - 30f * i));
+                data[i].alpha = Mathf.Max(mapFade, dataFades[i]);
+                dataShadows[i].SetPosition(drawPos + new Vector2(2f, -2f - 30f * i));
+                dataShadows[i].alpha = Mathf.Max(mapFade, dataFades[i]);
+            }
 
-            scavengerData.alpha = Mathf.Max(mapFade, scavengerDataFade);
-            eliteData.alpha = Mathf.Max(mapFade, eliteDataFade);
-            squadCooldown.alpha = Mathf.Max(mapFade, cooldownFade);
-            squadCount.alpha = Mathf.Max(mapFade, squadCountFade);
+            // This is literally the worst thing ive ever written but it looks cool and works so idc
+            if (hud.owner is Player player && player.room != null)
+            {
+                float rotationFac = Mathf.Sin(Mathf.Lerp(lastPointerRotation, pointerRotation, timeStacker) * Mathf.PI);
+                Vector2 pointerDir = Vector3.Slerp(lastPointAt, pointAt, timeStacker);
+                Vector2 playerPos = Vector2.Lerp(player.mainBodyChunk.lastPos, player.mainBodyChunk.pos, timeStacker);
+                Vector2 perp = Custom.PerpendicularVector(pointerDir);
+                Vector2 backPoint = playerPos + pointerDir * 29f;
+                Vector2 frontPoint = playerPos + pointerDir * 43f;
+                Vector2 rightPoint = backPoint + perp * pointerWidth * (1f - rotationFac);
+                Vector2 leftPoint = backPoint - perp * pointerWidth * (1f - rotationFac);
+                Vector2 rightFac = perp * pointer3DWidth * rotationFac;
+                float gruh = 43f - 29f;
+                float grug = Mathf.Sqrt(gruh * gruh + pointerWidth * pointerWidth);
+
+                scavPointerLines[3].SetPosition(backPoint + rightFac - player.room.game.cameras[0].pos);
+                scavPointerLines[3].scaleX = pointerWidth * 2f * (1f - rotationFac);
+                scavPointerLines[3].rotation = Custom.VecToDeg(pointerDir);
+                
+                scavPointerLines[4].SetPosition(Vector2.Lerp(rightPoint + rightFac, frontPoint + rightFac, 0.5f) - player.room.game.cameras[0].pos);
+                scavPointerLines[4].scaleY = grug;
+                scavPointerLines[4].rotation = Custom.VecToDeg(Custom.DirVec(rightPoint + rightFac, frontPoint + rightFac));
+
+                scavPointerLines[5].SetPosition(Vector2.Lerp(leftPoint + rightFac, frontPoint + rightFac, 0.5f) - player.room.game.cameras[0].pos);
+                scavPointerLines[5].scaleY = grug;
+                scavPointerLines[5].rotation = Custom.VecToDeg(Custom.DirVec(leftPoint + rightFac, frontPoint + rightFac));
+
+                scavPointerLines[6].SetPosition(backPoint - rightFac - player.room.game.cameras[0].pos);
+                scavPointerLines[6].scaleX = pointerWidth * 2f * (1f - rotationFac);
+                scavPointerLines[6].rotation = Custom.VecToDeg(pointerDir);
+
+                scavPointerLines[7].SetPosition(Vector2.Lerp(rightPoint - rightFac, frontPoint - rightFac, 0.5f) - player.room.game.cameras[0].pos);
+                scavPointerLines[7].scaleY = grug;
+                scavPointerLines[7].rotation = Custom.VecToDeg(Custom.DirVec(rightPoint - rightFac, frontPoint - rightFac));
+
+                scavPointerLines[8].SetPosition(Vector2.Lerp(leftPoint - rightFac, frontPoint - rightFac, 0.5f) - player.room.game.cameras[0].pos);
+                scavPointerLines[8].scaleY = grug;
+                scavPointerLines[8].rotation = Custom.VecToDeg(Custom.DirVec(leftPoint - rightFac, frontPoint - rightFac));
+
+                for (int i = 0; i < 2; i++)
+                {
+                    scavPointerLines[i + 1].SetPosition(backPoint + perp * pointer3DWidth * (i == 0 ? 1 : -1) * (1f - rotationFac) - player.room.game.cameras[0].pos);
+                    scavPointerLines[i + 1].scaleX = pointer3DWidth * 2f * rotationFac;
+                    scavPointerLines[i + 1].rotation = Custom.VecToDeg(pointerDir);
+                }
+                scavPointerLines[0].SetPosition(frontPoint - player.room.game.cameras[0].pos);
+                scavPointerLines[0].scaleX = pointer3DWidth * 2f * rotationFac;
+                scavPointerLines[0].rotation = Custom.VecToDeg(pointerDir);
+            }
+            for (int i = 0; i < 9; i++)
+            {
+                scavPointerLines[i].alpha = pointerFade;
+                scavPointerLines[i].isVisible = scavPointerLines[i].alpha > 0f;
+            }
         }
 
         public Vector2 DrawPos(float timeStacker)
@@ -181,10 +298,17 @@ namespace ScavIntel
 
         public override void ClearSprites()
         {
-            scavengerData.RemoveFromContainer();
-            eliteData.RemoveFromContainer();
-            squadCooldown.RemoveFromContainer();
-            squadCount.RemoveFromContainer();
+            for (int i = 0; i < 4; i++)
+            {
+                data[i].RemoveFromContainer();
+                dataShadows[i].RemoveFromContainer();
+            }
+            //scavPointer[0].RemoveFromContainer();
+            //scavPointer[1].RemoveFromContainer();
+            for (int i = 0; i < 9; i++)
+            {
+                scavPointerLines[i].RemoveFromContainer();
+            }
 
             Hooks.GlobalInfo.StatsUpdated -= UpdateInfo;
         }

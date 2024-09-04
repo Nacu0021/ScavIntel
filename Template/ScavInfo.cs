@@ -86,13 +86,15 @@ namespace ScavIntel
                 {
                     if (scavCount != lastScavCount)
                     {
-                        hud.showScavengerData = 70;
-                        hud.scavengerDataOnLast = true;
-                        hud.scavengerDataFromKill = fromKill;
+                        hud.dataShows[0] = 120;
+                        hud.dataOnLast[0] = true;
+                        hud.dataAnimations[0] = 0;
                     }
                     if (eliteCount != lastEliteCount)
                     {
-                        hud.showEliteData = 70;
+                        hud.dataShows[1] = 120;
+                        hud.dataOnLast[1] = true;
+                        hud.dataAnimations[1] = 0;
                     }
                     break;
                 }
@@ -112,10 +114,8 @@ namespace ScavIntel
 
             foreach (var scav in world.scavengersWorldAI.scavengers)
             {
-                //bool inDenCheck = scav.destination == scav.denPosition && scav.parent.pos.room == world.offScreenDen.index && cycleStartInit;
-                //Plugin.logger.LogMessage($"Scavenger {scav.parent}. Dead - {scav.parent.state.dead}.");
                 bool precycleCheck = ModManager.MSC && scav.parent.preCycle && world.rainCycle.maxPreTimer <= 0;
-                if (scav.parent.state.dead || precycleCheck) continue;// || ((scav.parent.InDen || scav.parent.pos.room == world.offScreenDen.index) && scav.parent.WantToStayInDenUntilEndOfCycle()) || inDenCheck) continue;
+                if (scav.parent.state.dead || precycleCheck) continue;
                 if (scav.parent.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite)
                 {
                     eliteCount++;
@@ -131,23 +131,6 @@ namespace ScavIntel
             StatsUpdated?.Invoke();
 
             Plugin.logger.LogMessage($"New global scav count 3a: {allScavs[0]} - {allScavs[1]}");
-
-            //if (world.game.cameras == null || world.game.cameras[0].hud == null) return;
-            //foreach (var g in world.game.cameras[0].hud.parts)
-            //{
-            //    if (g is IntelHUD hud)
-            //    {
-            //        if (scavCount != lastScavCount)
-            //        {
-            //            hud.showScavengerData = 50;
-            //        }
-            //        if (eliteCount != lastEliteCount)
-            //        {
-            //            hud.showEliteData = 50;
-            //        }
-            //        break;    
-            //    }
-            //}
         }
 
         public void UpdateSquadCount(ScavengersWorldAI scavsAI)
@@ -172,7 +155,8 @@ namespace ScavIntel
                 {
                     if (lastCount != squadScavsCount)
                     {
-                        hud.showSquadCount = 100;
+                        hud.dataShows[3] = 120;
+                        hud.dataOnLast[3] = true;
                     }
                     break;
                 }
@@ -191,11 +175,11 @@ namespace ScavIntel
                 {
                     if (squadCooldown > 0 && squadCooldown < 6)
                     {
-                        hud.showCooldown = 100;
+                        hud.dataShows[2] = 120;
                     }
                     if (squadCooldown == 0 && lastCooldown > squadCooldown)
                     {
-                        hud.showSquadCount = 100;
+                        hud.dataShows[3] = 120;
                     }
                     break;
                 }
