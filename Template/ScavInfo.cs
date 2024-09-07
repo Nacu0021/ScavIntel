@@ -80,6 +80,8 @@ namespace ScavIntel
             Plugin.logger.LogMessage($"New available scav counts: {availableScavs[0]} - {availableScavs[1]}. 2a: {availableScavs[0] + killedScavs[0]} - {availableScavs[1] + killedScavs[1]}");
 
             if (!cycleStartInit || world.game.cameras == null || world.game.cameras[0].hud == null) return;
+            if (fromKill && !Plugin.optiones.ShowKills.Value) return;
+            if (!fromKill && !Plugin.optiones.ShowKillsMax.Value) return;
             foreach (var g in world.game.cameras[0].hud.parts)
             {
                 if (g is IntelHUD hud)
@@ -148,7 +150,7 @@ namespace ScavIntel
 
             squadScavsCount = count;
 
-            if (scavsAI.world.game.cameras == null || scavsAI.world.game.cameras[0].hud == null) return;
+            if (scavsAI.world.game.cameras == null || scavsAI.world.game.cameras[0].hud == null || !Plugin.optiones.ShowSquadCount.Value) return;
             foreach (var g in scavsAI.world.game.cameras[0].hud.parts)
             {
                 if (g is IntelHUD hud)

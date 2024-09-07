@@ -17,13 +17,20 @@ namespace ScavIntel
             On.ScavengersWorldAI.Update += ScavengersWorldAI_Update;
             On.OverWorld.WorldLoaded += OverWorld_WorldLoaded;
             On.OverWorld.LoadWorld += OverWorld_LoadWorld;
-            On.SaveState.SessionEnded += SaveState_SessionEnded;
+            //On.SaveState.SessionEnded += SaveState_SessionEnded;
             //On.ShelterDoor.Update += ShelterDoor_Update;
             On.AbstractRoom.MoveEntityToDen += AbstractRoom_MoveEntityToDen;
             On.AbstractRoom.MoveEntityOutOfDen += AbstractRoom_MoveEntityOutOfDen;
             On.ProcessManager.PreSwitchMainProcess += ProcessManager_PreSwitchMainProcess;
             On.HUD.HUD.InitSinglePlayerHud += HUD_InitSinglePlayerHud;
             On.RoomCamera.FireUpSinglePlayerHUD += RoomCamera_FireUpSinglePlayerHUD;
+            On.HUD.HUD.InitSleepHud += HUD_InitSleepHud;
+        }
+
+        private static void HUD_InitSleepHud(On.HUD.HUD.orig_InitSleepHud orig, HUD.HUD self, Menu.SleepAndDeathScreen sleepAndDeathScreen, HUD.Map.MapData mapData, SlugcatStats charStats)
+        {
+            orig.Invoke(self, sleepAndDeathScreen, mapData, charStats);
+            self.AddPart(new IntelHUD(self));
         }
 
         private static void RoomCamera_FireUpSinglePlayerHUD(On.RoomCamera.orig_FireUpSinglePlayerHUD orig, RoomCamera self, Player player)
@@ -77,7 +84,6 @@ namespace ScavIntel
 
             if (ent is AbstractCreature crit && (crit.creatureTemplate.type == CreatureTemplate.Type.Scavenger || crit.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite))
             {
-                Plugin.logger.LogWarning("OUT OF DEN");
                 GlobalInfo.UpdateAvailableScavs(self.world, false);
             }
         }
@@ -88,7 +94,6 @@ namespace ScavIntel
 
             if (ent is AbstractCreature crit && (crit.creatureTemplate.type == CreatureTemplate.Type.Scavenger || crit.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite))
             {
-                Plugin.logger.LogWarning("INTO DEN");
                 GlobalInfo.UpdateAvailableScavs(self.world, false);
             }
         }
@@ -155,11 +160,10 @@ namespace ScavIntel
 
             if (previousSquadCount != self.playerAssignedSquads.Count)
             {
-                Plugin.logger.LogWarning("Current amount of player assigned squads: " + self.playerAssignedSquads.Count);
                 GlobalInfo.UpdateSquadCount(self);
             }
 
-            GlobalInfo.CooldownToSeconds(self.playerSquadCooldown, self.world);
+            if (Plugin.optiones.ShowSquadCooldown.Value) GlobalInfo.CooldownToSeconds(self.playerSquadCooldown, self.world);
         }
 
         //private static void ScavengersWorldAI_AddScavenger(On.ScavengersWorldAI.orig_AddScavenger orig, ScavengersWorldAI self, ScavengerAbstractAI newScav)

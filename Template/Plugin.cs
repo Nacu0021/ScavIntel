@@ -15,18 +15,13 @@ namespace ScavIntel
     {
         public static bool AppliedAlreadyDontDoItAgainPlease;
         internal static BepInEx.Logging.ManualLogSource logger;
-
         public static bool ShowStats = true;
-        public static Configurable<bool> ShowPointer;
-        public static Configurable<bool> ShowKills;
-        public static Configurable<bool> ShowKillsMax;
-        public static Configurable<bool> ShowTotal;
-        public static Configurable<bool> ShowSquadCooldown;
-        public static Configurable<bool> ShowSquadCount;
+        public static ScavIntelOptions optiones;
 
         public void OnEnable()
         {
             logger = Logger;
+            optiones = new();
             On.RainWorld.OnModsInit += OnModsInit;
         }
 
@@ -37,7 +32,7 @@ namespace ScavIntel
 
         public void Update()
         {
-            if (Input.anyKeyDown && Input.GetKeyDown(KeyCode.I))
+            if (Input.anyKeyDown && Input.GetKeyDown(optiones.StatsKeybind.Value))
             {
                 ShowStats = !ShowStats;
             }
@@ -51,6 +46,7 @@ namespace ScavIntel
             {
                 AppliedAlreadyDontDoItAgainPlease = true;
 
+                MachineConnector.SetRegisteredOI("nacu.scavintel", optiones);
                 Hooks.Apply();
             }
         }

@@ -86,24 +86,41 @@ namespace ScavIntel
 
         public void UpdateInfo()
         {
+            bool twoActive = (Plugin.optiones.ShowKills.Value && Plugin.optiones.ShowTotal.Value) ||
+                             (Plugin.optiones.ShowKills.Value && Plugin.optiones.ShowKillsMax.Value) ||
+                             (Plugin.optiones.ShowTotal.Value && Plugin.optiones.ShowKillsMax.Value);
+            bool allActive = Plugin.optiones.ShowKills.Value && Plugin.optiones.ShowTotal.Value && Plugin.optiones.ShowKillsMax.Value;
+
             data[0].text = string.Concat(
-                "Scavenger Counts (kills/kills max/total): ",
-                Hooks.GlobalInfo.killedScavs[0],
-                "/",
-                Hooks.GlobalInfo.killedScavs[0] + Hooks.GlobalInfo.availableScavs[0],
-                "/",
-                Hooks.GlobalInfo.allScavs[0]
+                "Scavenger Counts (",
+                Plugin.optiones.ShowKills.Value ? "kills" : "",
+                twoActive ? "/" : "",
+                Plugin.optiones.ShowKillsMax.Value ? "kills max" : "",
+                allActive ? "/" : "",
+                Plugin.optiones.ShowTotal.Value ? "total" : "",
+                "): ",
+                Plugin.optiones.ShowKills.Value ? Hooks.GlobalInfo.killedScavs[0] : "",
+                twoActive ? "/" : "",
+                Plugin.optiones.ShowKillsMax.Value ? Hooks.GlobalInfo.availableScavs[0] + Hooks.GlobalInfo.killedScavs[0] : "",
+                allActive ? "/" : "",
+                Plugin.optiones.ShowTotal.Value ? Hooks.GlobalInfo.allScavs[0] : ""
                 );
 
             data[1].text = string.Concat(
-                "Elite Scavenger Counts (kills/kills max/total): ",
-                Hooks.GlobalInfo.killedScavs[1],
-                "/",
-                Hooks.GlobalInfo.killedScavs[1] + Hooks.GlobalInfo.availableScavs[1],
-                "/",
-                Hooks.GlobalInfo.allScavs[1]
+                "Scavenger Counts (",
+                Plugin.optiones.ShowKills.Value ? "kills" : "",
+                twoActive ? "/" : "",
+                Plugin.optiones.ShowKillsMax.Value ? "kills max" : "",
+                allActive ? "/" : "",
+                Plugin.optiones.ShowTotal.Value ? "total" : "",
+                "): ",
+                Plugin.optiones.ShowKills.Value ? Hooks.GlobalInfo.killedScavs[1] : "",
+                twoActive ? "/" : "",
+                Plugin.optiones.ShowKillsMax.Value ? Hooks.GlobalInfo.availableScavs[1] + Hooks.GlobalInfo.killedScavs[1] : "",
+                allActive ? "/" : "",
+                Plugin.optiones.ShowTotal.Value ? Hooks.GlobalInfo.allScavs[1] : ""
                 );
-            data[3].text = "Squad count: " + Hooks.GlobalInfo.squadScavsCount.ToString();
+            data[3].text = Plugin.optiones.ShowSquadCount.Value ? ("Squad count: " + Hooks.GlobalInfo.squadScavsCount.ToString()) : "";
         }
 
         public override void Update()
@@ -150,34 +167,50 @@ namespace ScavIntel
 
                         float colorOverrideX = Mathf.InverseLerp(animationStart, animationStart + animationLength, dataAnimations[i]);
                         float colorOverrideFac = -Mathf.Abs(Mathf.Pow(colorOverrideX * 2f - 1f, 2f)) + 1f;
-                        data[i].color = Color.Lerp(Color.white, RainWorld.SaturatedGold, colorOverrideFac * 0.9f);
+                        data[i].color = Color.Lerp(Color.white, RainWorld.SaturatedGold, colorOverrideFac * 0.8f); // Change flash color if needed
 
                         if (dataAnimations[i] > animationStart)
                         {
+                            bool twoActive = (Plugin.optiones.ShowKills.Value && Plugin.optiones.ShowTotal.Value) ||
+                                             (Plugin.optiones.ShowKills.Value && Plugin.optiones.ShowKillsMax.Value) ||
+                                             (Plugin.optiones.ShowTotal.Value && Plugin.optiones.ShowKillsMax.Value);
+                            bool allActive = Plugin.optiones.ShowKills.Value && Plugin.optiones.ShowTotal.Value && Plugin.optiones.ShowKillsMax.Value;
                             switch (i)
                             {
                                 case 0:
                                     data[i].text = string.Concat(
-                                        "Scavenger Counts (kills/kills max/total): ",
-                                        Hooks.GlobalInfo.killedScavs[0],
-                                        "/",
-                                        Hooks.GlobalInfo.killedScavs[0] + Hooks.GlobalInfo.availableScavs[0],
-                                        "/",
-                                        Hooks.GlobalInfo.allScavs[0]
+                                        "Scavenger Counts (",
+                                        Plugin.optiones.ShowKills.Value ? "kills" : "",
+                                        twoActive ? "/" : "",
+                                        Plugin.optiones.ShowKillsMax.Value ? "kills max" : "",
+                                        allActive ? "/" : "",
+                                        Plugin.optiones.ShowTotal.Value ? "total" : "",
+                                        "): ",
+                                        Plugin.optiones.ShowKills.Value ? Hooks.GlobalInfo.killedScavs[0] : "",
+                                        twoActive ? "/" : "",
+                                        Plugin.optiones.ShowKillsMax.Value ? Hooks.GlobalInfo.availableScavs[0] + Hooks.GlobalInfo.killedScavs[0] : "",
+                                        allActive ? "/" : "",
+                                        Plugin.optiones.ShowTotal.Value ? Hooks.GlobalInfo.allScavs[0] : ""
                                         );
                                     break;
                                 case 1:
                                     data[i].text = string.Concat(
-                                        "Elite Scavenger Counts (kills/kills max/total): ",
-                                        Hooks.GlobalInfo.killedScavs[1],
-                                        "/",
-                                        Hooks.GlobalInfo.killedScavs[1] + Hooks.GlobalInfo.availableScavs[1],
-                                        "/",
-                                        Hooks.GlobalInfo.allScavs[1]
+                                        "Scavenger Counts (",
+                                        Plugin.optiones.ShowKills.Value ? "kills" : "",
+                                        twoActive ? "/" : "",
+                                        Plugin.optiones.ShowKillsMax.Value ? "kills max" : "",
+                                        allActive ? "/" : "",
+                                        Plugin.optiones.ShowTotal.Value ? "total" : "",
+                                        "): ",
+                                        Plugin.optiones.ShowKills.Value ? Hooks.GlobalInfo.killedScavs[1] : "",
+                                        twoActive ? "/" : "",
+                                        Plugin.optiones.ShowKillsMax.Value ? Hooks.GlobalInfo.availableScavs[1] + Hooks.GlobalInfo.killedScavs[1] : "",
+                                        allActive ? "/" : "",
+                                        Plugin.optiones.ShowTotal.Value ? Hooks.GlobalInfo.allScavs[1] : ""
                                         );
                                     break;
                                 case 3:
-                                    data[i].text = "Squad count: " + Hooks.GlobalInfo.squadScavsCount.ToString();
+                                    data[i].text = Plugin.optiones.ShowSquadCount.Value ? ("Squad count: " + Hooks.GlobalInfo.squadScavsCount.ToString()) : "";
                                     break;
                             }
                         }
@@ -203,18 +236,24 @@ namespace ScavIntel
                 {
                     AbstractCreature pointCreature = null;
                     List<Scavenger> stattedScavs = [];
-                    foreach (var crit in player.room.abstractRoom.creatures)
+                    if (Plugin.ShowStats || Plugin.optiones.ShowPointer.Value)
                     {
-                        if (!crit.state.dead &&
-                            (crit.creatureTemplate.type == CreatureTemplate.Type.Scavenger || crit.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite) &&
-                            crit.realizedCreature != null)
+                        foreach (var crit in player.room.abstractRoom.creatures)
                         {
-                            if (pointCreature == null || Custom.ManhattanDistance(player.abstractCreature.pos, crit.pos) < Custom.ManhattanDistance(player.abstractCreature.pos, pointCreature.pos))
+                            if (!crit.state.dead &&
+                                (crit.creatureTemplate.type == CreatureTemplate.Type.Scavenger || crit.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite) &&
+                                crit.realizedCreature != null)
                             {
-                                pointCreature = crit;
-                            }
+                                if (Plugin.optiones.ShowPointer.Value)
+                                {
+                                    if (pointCreature == null || Custom.ManhattanDistance(player.abstractCreature.pos, crit.pos) < Custom.ManhattanDistance(player.abstractCreature.pos, pointCreature.pos))
+                                    {
+                                        pointCreature = crit;
+                                    }
+                                }
 
-                            if (Plugin.ShowStats) stattedScavs.Add(crit.realizedCreature as Scavenger);
+                                if (Plugin.ShowStats) stattedScavs.Add(crit.realizedCreature as Scavenger);
+                            }
                         }
                     }
 
@@ -282,11 +321,16 @@ namespace ScavIntel
 
             for (int i = 0; i < 4; i++)
             {
-                data[i].SetPosition(drawPos + new Vector2(0f, 0f - 30f * i));
+                data[i].SetPosition(drawPos + new Vector2(-10f, 0f - 30f * i));
                 data[i].alpha = Mathf.Max(mapFade, dataFades[i]);
-                dataShadows[i].SetPosition(drawPos + new Vector2(2f, -2f - 30f * i));
+                dataShadows[i].SetPosition(data[i].GetPosition() + new Vector2(2f, -2f));
                 dataShadows[i].alpha = Mathf.Max(mapFade, dataFades[i]);
             }
+
+            data[2].isVisible = Plugin.optiones.ShowSquadCooldown.Value;
+            dataShadows[2].isVisible = Plugin.optiones.ShowSquadCooldown.Value;
+            data[3].isVisible = Plugin.optiones.ShowSquadCount.Value;
+            dataShadows[3].isVisible = Plugin.optiones.ShowSquadCount.Value;
 
             // This is literally the worst thing ive ever written but it looks cool and works so idc
             if (hud.owner is Player player && player.room != null)
@@ -352,7 +396,12 @@ namespace ScavIntel
 
         public Vector2 DrawPos(float timeStacker)
         {
-            return Vector2.Lerp(lastPos, pos, timeStacker);
+            Vector2 add = Vector2.zero;
+            if (hud.parts.Any(x => x is ExpeditionHUD))
+            {
+                add = new Vector2(0f, -160f);
+            }
+            return Vector2.Lerp(lastPos, pos, timeStacker) + add;
         }
 
         public override void ClearSprites()
