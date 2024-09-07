@@ -1,6 +1,7 @@
 ﻿using BepInEx;
 using System.Security.Permissions;
 using System.Security;
+using UnityEngine;
 
 #pragma warning disable CS0618
 [module: UnverifiableCode]
@@ -15,6 +16,14 @@ namespace ScavIntel
         public static bool AppliedAlreadyDontDoItAgainPlease;
         internal static BepInEx.Logging.ManualLogSource logger;
 
+        public static bool ShowStats = true;
+        public static Configurable<bool> ShowPointer;
+        public static Configurable<bool> ShowKills;
+        public static Configurable<bool> ShowKillsMax;
+        public static Configurable<bool> ShowTotal;
+        public static Configurable<bool> ShowSquadCooldown;
+        public static Configurable<bool> ShowSquadCount;
+
         public void OnEnable()
         {
             logger = Logger;
@@ -24,6 +33,14 @@ namespace ScavIntel
         public void OnDisable()
         {
             logger = null;
+        }
+
+        public void Update()
+        {
+            if (Input.anyKeyDown && Input.GetKeyDown(KeyCode.I))
+            {
+                ShowStats = !ShowStats;
+            }
         }
 
         public static void OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld raingame)
