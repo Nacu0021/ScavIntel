@@ -150,20 +150,34 @@ namespace ScavIntel
         private static void ScavengersWorldAI_Update(On.ScavengersWorldAI.orig_Update orig, ScavengersWorldAI self)
         {
             int previousScavCount = self.scavengers.Count;
-            int previousSquadCount = self.playerAssignedSquads.Count;
+            int previousSquadCount = GetScavInSquadCount(self);
             orig.Invoke(self);
             if (previousScavCount != self.scavengers.Count)
             {
                 GlobalInfo.UpdateAvailableScavs(self.world, false);
-                GlobalInfo.UpdateSquadCount(self);
             }
-
-            if (previousSquadCount != self.playerAssignedSquads.Count)
+            int newCount = GetScavInSquadCount(self);
+            if (previousSquadCount != newCount)
             {
-                GlobalInfo.UpdateSquadCount(self);
+                GlobalInfo.UpdateSquadCount(self, newCount);
             }
 
             if (Plugin.optiones.ShowSquadCooldown.Value) GlobalInfo.CooldownToSeconds(self.playerSquadCooldown, self.world);
+        }
+
+        public static int GetScavInSquadCount(ScavengersWorldAI scavsAI)
+        {
+            int count = 0;
+
+            foreach (var squad in scavsAI.playerAssignedSquads)
+            {
+                if (squad.missionType == ScavengerAbstractAI.ScavengerSquad.MissionID.HuntCreature && squad.targetCreature != null && squad.targetCreature.creatureTemplate.type == CreatureTemplate.Type.Slugcat)
+                {
+                    count += squad.members.Count;
+                }
+            }
+
+            return count;
         }
 
         //private static void ScavengersWorldAI_AddScavenger(On.ScavengersWorldAI.orig_AddScavenger orig, ScavengersWorldAI self, ScavengerAbstractAI newScav)
@@ -187,7 +201,7 @@ namespace ScavIntel
                 GlobalInfo.UpdateAvailableScavs(victim.room.world, true);
                 if (victim.room.world.scavengersWorldAI != null && ((victim as Scavenger).abstractCreature.abstractAI as ScavengerAbstractAI).squad != null)
                 {
-                    GlobalInfo.UpdateSquadCount(victim.room.world.scavengersWorldAI);
+                    GlobalInfo.UpdateSquadCount(victim.room.world.scavengersWorldAI, GetScavInSquadCount(victim.room.world.scavengersWorldAI));
                 }
             }
         }

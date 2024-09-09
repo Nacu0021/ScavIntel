@@ -13,7 +13,6 @@ namespace ScavIntel
         public int squadCooldown;
         public int squadScavsCount;
         public bool cycleStartInit;
-        public Action StatsUpdated;
 
         public ScavInfo()
         {
@@ -75,7 +74,6 @@ namespace ScavIntel
 
             availableScavs[0] = scavCount;
             availableScavs[1] = eliteCount;
-            StatsUpdated?.Invoke();
 
             Plugin.logger.LogMessage($"New available scav counts: {availableScavs[0]} - {availableScavs[1]}. 2a: {availableScavs[0] + killedScavs[0]} - {availableScavs[1] + killedScavs[1]}");
 
@@ -130,24 +128,34 @@ namespace ScavIntel
 
             allScavs[0] = scavCount;
             allScavs[1] = eliteCount;
-            StatsUpdated?.Invoke();
 
             Plugin.logger.LogMessage($"New global scav count 3a: {allScavs[0]} - {allScavs[1]}");
-        }
 
-        public void UpdateSquadCount(ScavengersWorldAI scavsAI)
-        {
-            int lastCount = squadScavsCount;
-            int count = 0;
-
-            foreach (var squad in scavsAI.playerAssignedSquads)
+            if (!cycleStartInit || world.game.cameras == null || world.game.cameras[0].hud == null) return;
+            foreach (var g in world.game.cameras[0].hud.parts)
             {
-                if (squad.missionType == ScavengerAbstractAI.ScavengerSquad.MissionID.HuntCreature && squad.targetCreature != null && squad.targetCreature.creatureTemplate.type == CreatureTemplate.Type.Slugcat)
+                if (g is IntelHUD hud)
                 {
-                    count += squad.members.Count;
+                    if (scavCount != lastScavCount)
+                    {
+                        hud.dataShows[0] = 120;
+                        hud.dataOnLast[0] = true;
+                        hud.dataAnimations[0] = 0;
+                    }
+                    if (eliteCount != lastEliteCount)
+                    {
+                        hud.dataShows[1] = 120;
+                        hud.dataOnLast[1] = true;
+                        hud.dataAnimations[1] = 0;
+                    }
+                    break;
                 }
             }
+        }
 
+        public void UpdateSquadCount(ScavengersWorldAI scavsAI, int count)
+        {
+            int lastCount = squadScavsCount;
             squadScavsCount = count;
 
             if (scavsAI.world.game.cameras == null || scavsAI.world.game.cameras[0].hud == null || !Plugin.optiones.ShowSquadCount.Value) return;
