@@ -40,12 +40,12 @@ namespace ScavIntel
 
             //StatsUpdated?.Invoke();
 
-            Plugin.logger.LogMessage($"Player killed a{(elite ? "n elite" : "")} scavenger!! Current kills: {(killedScavs[elite ? 1 : 0])}(1a)");
+            //Plugin.logger.LogMessage($"Player killed a{(elite ? "n elite" : "")} scavenger!! Current kills: {(killedScavs[elite ? 1 : 0])}(1a)");
         }
 
         public void UpdateAvailableScavs(World world, bool fromKill)
         {
-            Plugin.logger.LogMessage($"UPDATING AVAILABLE SCAVS");
+            //Plugin.logger.LogMessage($"UPDATING AVAILABLE SCAVS");
             if (world.scavengersWorldAI == null) return;
 
             int lastScavCount = availableScavs[0];
@@ -75,7 +75,7 @@ namespace ScavIntel
             availableScavs[0] = scavCount;
             availableScavs[1] = eliteCount;
 
-            Plugin.logger.LogMessage($"New available scav counts: {availableScavs[0]} - {availableScavs[1]}. 2a: {availableScavs[0] + killedScavs[0]} - {availableScavs[1] + killedScavs[1]}");
+            //Plugin.logger.LogMessage($"New available scav counts: {availableScavs[0]} - {availableScavs[1]}. 2a: {availableScavs[0] + killedScavs[0]} - {availableScavs[1] + killedScavs[1]}");
 
             if (!cycleStartInit || world.game.cameras == null || world.game.cameras[0].hud == null) return;
             if (fromKill && !Plugin.optiones.ShowKills.Value) return;
@@ -103,7 +103,7 @@ namespace ScavIntel
 
         public void UpdateGlobalScavCount(World world)
         {
-            Plugin.logger.LogMessage($"UPDATING GLOBAL SCAV COUNT");
+            //Plugin.logger.LogMessage($"UPDATING GLOBAL SCAV COUNT");
             if (world.scavengersWorldAI == null) return;
 
             int lastScavCount = allScavs[0];
@@ -129,7 +129,7 @@ namespace ScavIntel
             allScavs[0] = scavCount;
             allScavs[1] = eliteCount;
 
-            Plugin.logger.LogMessage($"New global scav count 3a: {allScavs[0]} - {allScavs[1]}");
+            //Plugin.logger.LogMessage($"New global scav count 3a: {allScavs[0]} - {allScavs[1]}");
 
             if (!cycleStartInit || world.game.cameras == null || world.game.cameras[0].hud == null) return;
             foreach (var g in world.game.cameras[0].hud.parts)

@@ -129,9 +129,10 @@ namespace ScavIntel
         {
             int score = Custom.ManhattanDistance(player.abstractCreature.pos, scav.abstractCreature.pos);
 
-            if (!player.room.VisualContact(player.abstractCreature.pos, scav.abstractCreature.pos)) score *= 3;
+            if (scav.room == null) return score;
 
-            score += (int)(20f * (1f - Mathf.Abs(Vector2.Dot(Custom.DirVec(player.room.MiddleOfTile(player.abstractCreature.pos), player.room.MiddleOfTile(scav.abstractCreature.pos)), Vector2.right))));
+            if (!scav.room.VisualContact(player.abstractCreature.pos, scav.abstractCreature.pos)) score *= 3;
+            score += (int)(20f * (1f - Mathf.Abs(Vector2.Dot(Custom.DirVec(scav.room.MiddleOfTile(player.abstractCreature.pos), scav.room.MiddleOfTile(scav.abstractCreature.pos)), Vector2.right))));
 
             return score;
         }
@@ -422,7 +423,11 @@ namespace ScavIntel
             Vector2 add = Vector2.zero;
             if (hud.parts.Any(x => x is ExpeditionHUD))
             {
-                add = new Vector2(0f, -160f);
+                add += new Vector2(0f, -160f);
+            }
+            if (hud.owner.GetOwnerType() != HUD.HUD.OwnerType.Player)
+            {
+                add += new Vector2(0f, -40f);
             }
             return Vector2.Lerp(lastPos, pos, timeStacker) + add;
         }
@@ -449,7 +454,7 @@ namespace ScavIntel
 
         public static int GetScavLevel(Scavenger scav)
         {
-            return Mathf.RoundToInt(100f * ((scav.blockingSkill + scav.dodgeSkill + scav.meleeSkill + scav.midRangeSkill + scav.reactionSkill) / 5f));
+            return Mathf.RoundToInt(100f * (scav.blockingSkill * 0.15f + scav.dodgeSkill * 0.15f + scav.meleeSkill * 0.15f + scav.midRangeSkill * 0.15f + scav.reactionSkill * 0.4f));
         }
 
         public static Color GetScavLevelColor(int level)
