@@ -171,7 +171,7 @@ namespace ScavIntel
 
             foreach (var squad in scavsAI.playerAssignedSquads)
             {
-                if (squad.missionType == ScavengerAbstractAI.ScavengerSquad.MissionID.HuntCreature && squad.targetCreature != null && squad.targetCreature.creatureTemplate.type == CreatureTemplate.Type.Slugcat)
+                if (squad.targetCreature != null && squad.targetCreature.creatureTemplate.type == CreatureTemplate.Type.Slugcat)
                 {
                     count += squad.members.Count;
                 }
