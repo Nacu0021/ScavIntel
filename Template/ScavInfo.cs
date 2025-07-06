@@ -61,7 +61,7 @@ namespace ScavIntel
                 bool precycleCheck = ModManager.MSC && scav.parent.preCycle && world.rainCycle.maxPreTimer <= 0;
                 //Plugin.logger.LogMessage($"Scavenger {scav.parent}. Dead - {scav.parent.state.dead}. Den - {(scav.parent.InDen || scav.parent.pos.room == world.offScreenDen.index) && scav.parent.WantToStayInDenUntilEndOfCycle()}. Night check 1 - {nightCheck}. InDenCheck - {inDenCheck}.");
                 if (scav.parent.state.dead || precycleCheck || ((scav.parent.InDen || scav.parent.pos.room == world.offScreenDen.index) && scav.parent.WantToStayInDenUntilEndOfCycle()) || nightCheck || inDenCheck) continue; //|| nightCheck2
-                if (scav.parent.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite)
+                if (scav.parent.creatureTemplate.type == DLCSharedEnums.CreatureTemplateType.ScavengerElite)
                 {
                     eliteCount++;
                 }
@@ -116,7 +116,7 @@ namespace ScavIntel
             {
                 bool precycleCheck = ModManager.MSC && scav.parent.preCycle && world.rainCycle.maxPreTimer <= 0;
                 if (scav.parent.state.dead || precycleCheck) continue;
-                if (scav.parent.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite)
+                if (scav.parent.creatureTemplate.type == DLCSharedEnums.CreatureTemplateType.ScavengerElite)
                 {
                     eliteCount++;
                 }

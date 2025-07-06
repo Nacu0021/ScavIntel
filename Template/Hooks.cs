@@ -16,7 +16,7 @@ namespace ScavIntel
             //On.ScavengersWorldAI.AddScavenger += ScavengersWorldAI_AddScavenger;
             On.ScavengersWorldAI.Update += ScavengersWorldAI_Update;
             On.OverWorld.WorldLoaded += OverWorld_WorldLoaded;
-            On.OverWorld.LoadWorld += OverWorld_LoadWorld;
+            On.OverWorld.LoadWorld_string_Name_Timeline_bool += OverWorld_LoadWorld_string_Name_Timeline_bool;
             //On.SaveState.SessionEnded += SaveState_SessionEnded;
             //On.ShelterDoor.Update += ShelterDoor_Update;
             On.AbstractRoom.MoveEntityToDen += AbstractRoom_MoveEntityToDen;
@@ -25,6 +25,36 @@ namespace ScavIntel
             On.HUD.HUD.InitSinglePlayerHud += HUD_InitSinglePlayerHud;
             On.RoomCamera.FireUpSinglePlayerHUD += RoomCamera_FireUpSinglePlayerHUD;
             On.HUD.HUD.InitSleepHud += HUD_InitSleepHud;
+        }
+
+        private static void OverWorld_LoadWorld_string_Name_Timeline_bool(On.OverWorld.orig_LoadWorld_string_Name_Timeline_bool orig, OverWorld self, string worldName, SlugcatStats.Name playerCharacterNumber, SlugcatStats.Timeline time, bool singleRoomWorld)
+        {
+            orig.Invoke(self, worldName, playerCharacterNumber, time, singleRoomWorld);
+
+            if (!GlobalInfo.cycleStartInit)
+            {
+                GlobalInfo.UpdateGlobalScavCount(self.activeWorld);
+                GlobalInfo.UpdateAvailableScavs(self.activeWorld, false);
+                GlobalInfo.cycleStartInit = true;
+            }
+        }
+
+        private static void OverWorld_WorldLoaded(On.OverWorld.orig_WorldLoaded orig, OverWorld self, bool warpUsed)
+        {
+            orig.Invoke(self, warpUsed);
+
+            GlobalInfo.UpdateGlobalScavCount(self.activeWorld);
+            GlobalInfo.UpdateAvailableScavs(self.activeWorld, false);
+
+            if (self.game.cameras == null || self.game.cameras[0].hud == null) return;
+            foreach (var g in self.game.cameras[0].hud.parts)
+            {
+                if (g is IntelHUD hud)
+                {
+                    hud.simulatedMapPress = 200;
+                    break;
+                }
+            }
         }
 
         private static void HUD_InitSleepHud(On.HUD.HUD.orig_InitSleepHud orig, HUD.HUD self, Menu.SleepAndDeathScreen sleepAndDeathScreen, HUD.Map.MapData mapData, SlugcatStats charStats)
@@ -60,18 +90,6 @@ namespace ScavIntel
             }
         }
 
-        private static void OverWorld_LoadWorld(On.OverWorld.orig_LoadWorld orig, OverWorld self, string worldName, SlugcatStats.Name playerCharacterNumber, bool singleRoomWorld)
-        {
-            orig.Invoke(self, worldName, playerCharacterNumber, singleRoomWorld);
-
-            if (!GlobalInfo.cycleStartInit)
-            {
-                GlobalInfo.UpdateGlobalScavCount(self.activeWorld);
-                GlobalInfo.UpdateAvailableScavs(self.activeWorld, false);
-                GlobalInfo.cycleStartInit = true;
-            }
-        }
-
         private static void HUD_InitSinglePlayerHud(On.HUD.HUD.orig_InitSinglePlayerHud orig, HUD.HUD self, RoomCamera cam)
         {
             orig.Invoke(self, cam);
@@ -82,7 +100,7 @@ namespace ScavIntel
         {
             orig.Invoke(self, ent);
 
-            if (ent is AbstractCreature crit && (crit.creatureTemplate.type == CreatureTemplate.Type.Scavenger || crit.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite))
+            if (ent is AbstractCreature crit && (crit.creatureTemplate.type == CreatureTemplate.Type.Scavenger || crit.creatureTemplate.type == DLCSharedEnums.CreatureTemplateType.ScavengerElite))
             {
                 GlobalInfo.UpdateAvailableScavs(self.world, false);
             }
@@ -92,7 +110,7 @@ namespace ScavIntel
         {
             orig.Invoke(self, ent);
 
-            if (ent is AbstractCreature crit && (crit.creatureTemplate.type == CreatureTemplate.Type.Scavenger || crit.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite))
+            if (ent is AbstractCreature crit && (crit.creatureTemplate.type == CreatureTemplate.Type.Scavenger || crit.creatureTemplate.type == DLCSharedEnums.CreatureTemplateType.ScavengerElite))
             {
                 GlobalInfo.UpdateAvailableScavs(self.world, false);
             }
@@ -127,24 +145,6 @@ namespace ScavIntel
             orig.Invoke(self, game, survived, newMalnourished);
 
             GlobalInfo.Reset(true);
-        }
-
-        private static void OverWorld_WorldLoaded(On.OverWorld.orig_WorldLoaded orig, OverWorld self)
-        {
-            orig.Invoke(self);
-
-            GlobalInfo.UpdateGlobalScavCount(self.activeWorld);
-            GlobalInfo.UpdateAvailableScavs(self.activeWorld, false);
-
-            if (self.game.cameras == null || self.game.cameras[0].hud == null) return;
-            foreach (var g in self.game.cameras[0].hud.parts)
-            {
-                if (g is IntelHUD hud)
-                {
-                    hud.simulatedMapPress = 200;
-                    break;
-                }
-            }
         }
 
         private static void ScavengersWorldAI_Update(On.ScavengersWorldAI.orig_Update orig, ScavengersWorldAI self)
@@ -194,9 +194,9 @@ namespace ScavIntel
         {
             orig.Invoke(self, victim);
 
-            if (victim.Template.type == CreatureTemplate.Type.Scavenger || victim.Template.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite)
+            if (victim.Template.type == CreatureTemplate.Type.Scavenger || victim.Template.type == DLCSharedEnums.CreatureTemplateType.ScavengerElite)
             {
-                GlobalInfo.AddKill(victim.Template.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite);
+                GlobalInfo.AddKill(victim.Template.type == DLCSharedEnums.CreatureTemplateType.ScavengerElite);
                 victim.room.world.scavengersWorldAI.scavengers.Remove(victim.abstractCreature.abstractAI as ScavengerAbstractAI);
                 GlobalInfo.UpdateAvailableScavs(victim.room.world, true);
                 if (victim.room.world.scavengersWorldAI != null && ((victim as Scavenger).abstractCreature.abstractAI as ScavengerAbstractAI).squad != null)

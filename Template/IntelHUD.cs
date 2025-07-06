@@ -256,7 +256,7 @@ namespace ScavIntel
                         foreach (var crit in room.abstractRoom.creatures)
                         {
                             if (!crit.state.dead &&
-                                (crit.creatureTemplate.type == CreatureTemplate.Type.Scavenger || crit.creatureTemplate.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite) &&
+                                (crit.creatureTemplate.type == CreatureTemplate.Type.Scavenger || crit.creatureTemplate.type == DLCSharedEnums.CreatureTemplateType.ScavengerElite) &&
                                 crit.realizedCreature != null && !crit.realizedCreature.inShortcut)
                             {
                                 if (Plugin.optiones.ShowPointer.Value)
@@ -531,7 +531,7 @@ namespace ScavIntel
                 scavLevel = GetScavLevel(followScav);
                 color = GetScavLevelColor(scavLevel);
 
-                if (followScav.Template.type == MoreSlugcatsEnums.CreatureTemplateType.ScavengerElite) scavLevel += 20;
+                if (followScav.Template.type == DLCSharedEnums.CreatureTemplateType.ScavengerElite) scavLevel += 20;
                 stats.text = "lvl. " + scavLevel.ToString();
                 statShadow.text = stats.text;
 
